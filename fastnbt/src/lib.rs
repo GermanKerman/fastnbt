@@ -405,6 +405,8 @@ pub struct DeOpts {
     max_seq_len: usize,
     /// Whether compound tag names are expected to exist or not.
     expect_coumpound_names: bool,
+
+    allow_non_compound_root: bool,
 }
 
 impl DeOpts {
@@ -432,6 +434,11 @@ impl DeOpts {
         self.expect_coumpound_names = value;
         self
     }
+
+    pub fn allow_non_compound_root(mut self, value: bool) -> Self {
+        self.allow_non_compound_root = value;
+        self
+    }
 }
 
 impl Default for DeOpts {
@@ -439,6 +446,7 @@ impl Default for DeOpts {
         Self {
             max_seq_len: 10_000_000, // arbitrary high limit.
             expect_coumpound_names: true,
+            allow_non_compound_root: false
         }
     }
 }

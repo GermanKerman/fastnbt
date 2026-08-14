@@ -300,29 +300,38 @@ where
     where
         V: de::Visitor<'de>,
     {
-        self.deserialize_map(visitor)
+        if !self.seen_root {
+            let peek = self.input.consume_tag()?;
+            if self.opts.expect_coumpound_names {
+                self.input.ignore_str()?
+            }
+
+            if peek != Tag::Compound  {
+                if !self.opts.allow_non_compound_root {
+                    return Err(Error::no_root_compound());
+                }
+
+                return AnonymousValue {
+                    tag: peek,
+                    last_hint: Hint::None,
+                    de: self
+                }.deserialize_any(visitor);
+            }
+
+
+
+            self.seen_root = true;
+        }
+
+
+        visitor.visit_map(MapAccess::new(self))
     }
 
     fn deserialize_map<V>(self, visitor: V) -> Result<V::Value>
     where
         V: de::Visitor<'de>,
     {
-        if !self.seen_root {
-            let peek = self.input.consume_tag()?;
-
-            match peek {
-                Tag::Compound => {
-                    if self.opts.expect_coumpound_names {
-                        self.input.ignore_str()?
-                    }
-                }
-                _ => return Err(Error::no_root_compound()),
-            }
-
-            self.seen_root = true;
-        }
-
-        visitor.visit_map(MapAccess::new(self))
+        self.deserialize_any(visitor)
     }
 
     fn deserialize_struct<V>(
@@ -334,7 +343,7 @@ where
     where
         V: de::Visitor<'de>,
     {
-        self.deserialize_map(visitor)
+        self.deserialize_any(visitor)
     }
 }
 
@@ -344,7 +353,7 @@ struct MapAccess<'a, In: 'a> {
 }
 
 impl<'a, In: 'a> MapAccess<'a, In> {
-    pub fn new(de: &'a mut Deserializer<In>) -> Self {
+    pub fn  new(de: &'a mut Deserializer<In>) -> Self {
         Self { de, tag: Tag::End }
     }
 }
